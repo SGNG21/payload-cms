@@ -78,6 +78,10 @@ cp .env.example .env   # puis renseigner les valeurs
 Base et premier compte :
 
 ```bash
+# L'adaptateur ne crée pas le schéma lui-même — à faire une fois, avant le
+# premier migrate, sur toute base neuve (locale ou Supabase) :
+psql "$DATABASE_URI" -c 'CREATE SCHEMA IF NOT EXISTS payload;'
+
 pnpm payload migrate:create init
 pnpm payload migrate
 pnpm dev
@@ -100,6 +104,36 @@ pnpm tsx scripts/provision-tenant.ts \
 ```
 
 Idempotent. Le mot de passe initial s'affiche une seule fois.
+
+## Preuve d'isolation multi-tenant
+
+Testé le 2026-08-09 sur Postgres 16 local (`schemaName: 'payload'`, jamais
+`public`), avec deux tenants provisionnés via le script ci-dessus :
+
+| Tenant | Slug | Compte editor | Slots |
+|---|---|---|---|
+| REB Couverture | `reb-couverture` | fabrice@reb-couverture.fr | hero, realisation-1, equipe |
+| Institut de Charlène | `institut-charlene` | charlene@institut-charlene.fr | hero, cabinet |
+
+Résultats (API REST, comptes editor authentifiés) :
+
+| Test | Attendu | Résultat |
+|---|---|---|
+| `GET /api/media-slots` (fabrice) | 3 docs, tenant reb-couverture uniquement | ✅ `totalDocs: 3` — hero/realisation-1/equipe |
+| `GET /api/media-slots` (charlene) | 2 docs, tenant institut-charlene uniquement | ✅ `totalDocs: 2` — hero/cabinet |
+| `GET /api/media-slots/:id` d'un slot d'un **autre** tenant | refusé | ✅ `404 Pas trouvé` (n'existe même pas pour ce user) |
+| `PATCH` d'un slot d'un **autre** tenant | refusé | ✅ `403` |
+| `PATCH` de son **propre** slot (`alt`) | autorisé | ✅ `200` |
+| `POST /api/media-slots` (editor, création) | refusé, même sur son propre tenant | ✅ `403` |
+| `DELETE /api/media-slots/:id` (editor, sur son propre slot) | refusé | ✅ `403` |
+| `PATCH /api/users/:id` — editor tente `roles: ['admin']` sur son propre compte | pas d'escalade | ✅ `200` (update autorisé sur soi-même) mais le champ `roles` reste `['editor']` — verrouillé par l'access de champ `adminOnlyField`, vérifié en base après coup |
+| `GET /api/public/sites/reb-couverture/media` (public, non authentifié) | mapping key→url du seul tenant reb-couverture | ✅ 3 clés, aucune clé de institut-charlene |
+| `GET /api/public/sites/institut-charlene/media` (public, non authentifié) | mapping key→url du seul tenant institut-charlene | ✅ 2 clés, aucune clé de reb-couverture |
+
+Isolation confirmée à trois niveaux : liste (`find`), accès direct par ID, et
+écriture (`update`/`create`/`delete`). Le plugin multi-tenant intersecte
+correctement la contrainte de tenant sur `media-slots` sans code d'accès
+supplémentaire à écrire — voir `src/access/index.ts`.
 
 ## Côté site client
 
