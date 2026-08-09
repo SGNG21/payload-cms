@@ -1,5 +1,6 @@
 import path from 'path'
 import { fileURLToPath } from 'url'
+import sharp from 'sharp'
 import { buildConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
@@ -32,6 +33,9 @@ export default buildConfig({
 
   collections: [Tenants, Users, MediaSlots],
   endpoints: [publicMediaEndpoint],
+
+  // Requis pour le redimensionnement d'image (thumbnail/card/hero) sur media-slots.
+  sharp,
 
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
