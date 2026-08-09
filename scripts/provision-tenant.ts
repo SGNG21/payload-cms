@@ -14,6 +14,7 @@
  * Le mot de passe généré est affiché une seule fois — à transmettre au client
  * par un canal séparé, et à changer à la première connexion.
  */
+import 'dotenv/config'
 import { getPayload } from 'payload'
 import crypto from 'crypto'
 import config from '../payload.config.js'
