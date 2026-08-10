@@ -4,7 +4,7 @@ import sharp from 'sharp'
 import { buildConfig } from 'payload'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { vercelBlobStorage } from '@payloadcms/storage-vercel-blob'
+import { s3Storage } from '@payloadcms/storage-s3'
 import { multiTenantPlugin } from '@payloadcms/plugin-multi-tenant'
 import { fr } from '@payloadcms/translations/languages/fr'
 import { en } from '@payloadcms/translations/languages/en'
@@ -59,10 +59,23 @@ export default buildConfig({
       },
     }),
 
-    vercelBlobStorage({
-      enabled: true,
+    // Stockage sur Supabase Storage (S3-compatible), pas Vercel Blob :
+    // tout l'écosystème reste Supabase pour ce projet.
+    s3Storage({
       collections: { 'media-slots': true },
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      bucket: process.env.S3_BUCKET || '',
+      config: {
+        endpoint: process.env.S3_ENDPOINT,
+        region: process.env.S3_REGION,
+        // Obligatoire pour Supabase Storage : sans ça, le SDK AWS construit
+        // des URLs virtual-hosted-style (bucket.endpoint) que Supabase ne sert
+        // pas, et la signature de la requête est rejetée.
+        forcePathStyle: true,
+        credentials: {
+          accessKeyId: process.env.S3_ACCESS_KEY_ID || '',
+          secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || '',
+        },
+      },
     }),
   ],
 
