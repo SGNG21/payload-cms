@@ -3,7 +3,7 @@
 Instance Payload unique, multi-tenant, qui donne à chaque client un espace de
 connexion pour remplacer les photos de son site.
 
-Payload 3.87.1 · Postgres · Vercel Blob · déploiement Vercel.
+Payload 3.87.1 · Postgres (Supabase) · Supabase Storage (S3-compatible) · déploiement Vercel.
 
 ---
 
@@ -71,7 +71,7 @@ Puis on remplace la config générée par celle de ce dossier :
 
 ```bash
 # copier payload.config.ts, src/collections, src/access, src/endpoints, scripts
-pnpm add @payloadcms/plugin-multi-tenant@3.87.1 @payloadcms/storage-vercel-blob@3.87.1
+pnpm add @payloadcms/plugin-multi-tenant@3.87.1 @payloadcms/storage-s3@3.87.1
 cp .env.example .env   # puis renseigner les valeurs
 ```
 
