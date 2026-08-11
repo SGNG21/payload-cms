@@ -23,6 +23,10 @@ export const MediaSlots: CollectionConfig = {
   upload: {
     mimeTypes: ['image/jpeg', 'image/png', 'image/webp', 'image/avif'],
     focalPoint: true,
+    // Un slot naît sans image (voir scripts/provision-tenant.ts) : le
+    // fichier n'est obligatoire qu'au remplacement (update), pas à la
+    // création par le script de provisioning.
+    filesRequiredOnCreate: false,
     imageSizes: [
       { name: 'thumbnail', width: 400, height: 300, position: 'centre' },
       { name: 'card', width: 900, position: 'centre' },
