@@ -14,6 +14,7 @@ import { Users } from './src/collections/Users.js'
 import { MediaSlots } from './src/collections/MediaSlots.js'
 import { publicMediaEndpoint } from './src/endpoints/publicMedia.js'
 import { userHasAccessToAllTenants } from './src/access/index.js'
+import { generateSupabasePublicFileURL } from './src/utilities/generateSupabasePublicFileURL.js'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -62,7 +63,17 @@ export default buildConfig({
     // Stockage sur Supabase Storage (S3-compatible), pas Vercel Blob :
     // tout l'écosystème reste Supabase pour ce projet.
     s3Storage({
-      collections: { 'media-slots': true },
+      collections: {
+        'media-slots': {
+          generateFileURL: ({ filename, prefix }) =>
+            generateSupabasePublicFileURL({
+              bucket: process.env.S3_BUCKET || '',
+              filename,
+              prefix,
+              s3Endpoint: process.env.S3_ENDPOINT,
+            }),
+        },
+      },
       bucket: process.env.S3_BUCKET || '',
       config: {
         endpoint: process.env.S3_ENDPOINT,
